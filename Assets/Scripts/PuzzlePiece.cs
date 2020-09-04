@@ -4,29 +4,29 @@ using UnityEngine;
 
 public class PuzzlePiece : MonoBehaviour
 {
-    public abstract class Dependency
+    public interface Dependency
     {
-        public abstract Vector2 GetTileSize();
+        Vector2 GetPieceSize();
     }
     public Dependency dependency;
 
     private class InterpolatedMovement
     {
         private Transform transform;
+        public bool shouldMove { get; private set; }
         public Vector3 startPosition { get; private set; }
         public Vector3 targetPosition { get; private set; }
         public float movementTime { get; private set; }
         public float passedTime { get; private set; }
-        public bool shouldMove { get; private set; }
 
         public InterpolatedMovement(Transform transform)
         {
             this.transform = transform;
+            shouldMove = false;
             startPosition = transform.position;
             targetPosition = startPosition;
             movementTime = 0.001f;
             passedTime = 0;
-            shouldMove = false;
         }
 
         public void SetMovement(Vector3 targetPosition, float time, bool skipPrevious = true)
@@ -68,6 +68,14 @@ public class PuzzlePiece : MonoBehaviour
             shouldMove = false;
             transform.position = targetPosition;
         }
+
+        public void BlinkTo(Vector3 targetPosition)
+        {
+            shouldMove = false;
+            transform.position = startPosition = this.targetPosition = targetPosition;
+            movementTime = 0.001f;
+            passedTime = 0;
+        }
     }
     private InterpolatedMovement movement;
 
@@ -80,7 +88,7 @@ public class PuzzlePiece : MonoBehaviour
     private Vector3 startPosition;
     private Vector3 targetPosition;
 
-    public bool isEmptyPiece = false;
+    public bool isInvisiblePiece = false;
     void Awake()
     {
         targetPosition = transform.position;
@@ -101,21 +109,21 @@ public class PuzzlePiece : MonoBehaviour
     
     public void OnMouseDown()
     {
-        if (top != null && top.isEmptyPiece)
+        if (top != null && top.isInvisiblePiece)
         {
-            AimToTop(dependency.GetTileSize());
+            AimToTop(dependency.GetPieceSize());
         }
-        else if (bottom != null && bottom.isEmptyPiece)
+        else if (bottom != null && bottom.isInvisiblePiece)
         {
-            AimToBottom(dependency.GetTileSize());
+            AimToBottom(dependency.GetPieceSize());
         }
-        else if (left != null && left.isEmptyPiece)
+        else if (left != null && left.isInvisiblePiece)
         {
-            AimToLeft(dependency.GetTileSize());
+            AimToLeft(dependency.GetPieceSize());
         }
-        else if (right != null && right.isEmptyPiece)
+        else if (right != null && right.isInvisiblePiece)
         {
-            AimToRight(dependency.GetTileSize());
+            AimToRight(dependency.GetPieceSize());
         }
     }
 
