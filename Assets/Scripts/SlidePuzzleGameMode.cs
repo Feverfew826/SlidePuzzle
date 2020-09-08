@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.U2D.Path;
 using UnityEngine;
-using UnityEngine.UIElements;
+using UnityEngine.UI;
 
 public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 {
@@ -11,8 +11,13 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
     public int puzzleDiagonalNum = 3;
     [Range(1f, 20f)]
     public float puzzleSize = 10;
+    [Range(1f, 20f)]
+    public float previewSize = 4;
+    public ToggleGroup toggleGroup;
     public Texture2D imageTexture;
     public SpriteRenderer preview;
+    public Text text;
+    public string revealText = "퍼즐을 푸셨습니다.";
     public GameObject puzzlePrefab;
     public GameObject emptyPuzzlePrefab;
     public int shuffleTime = 20;
@@ -25,36 +30,20 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
     private Vector2 spriteSize { get { return new Vector2(imageTexture.width / puzzleDiagonalNum, imageTexture.height / puzzleDiagonalNum); } }
     private Vector2 SizeFittingMultiplier { get { return new Vector2(Math.Min(1, spriteSize.x / spriteSize.y), Math.Min(1, spriteSize.y / spriteSize.x)); } }
     private Vector2 pieceSize { get { return new Vector2(puzzleSize / puzzleDiagonalNum * SizeFittingMultiplier.x, puzzleSize / puzzleDiagonalNum * SizeFittingMultiplier.y); } }
-
+    private Vector3 anchor { get { return transform.position - (Vector3)(pieceSize); } }
     // Start is called before the first frame update
     void Start()
     {
-
-        PuzzlePiece invisiblePiece = InstantiateInvisiblePiece();
-        Dictionary<Vector2Int, PuzzlePiece> visiblePieces = InstantiateVisiblePieces();
-
-        initialPieceMap = new Dictionary<Vector2Int, PuzzlePiece>(visiblePieces);
-        initialPieceMap.Add(Vector2Int.zero, invisiblePiece);
-
-        currentPieceMap = new Dictionary<Vector2Int, PuzzlePiece>(initialPieceMap);
-
-        ConnectEachPieces(initialPieceMap);
-
-        Rect previewImageRect = new Rect(0, 0, imageTexture.width, imageTexture.height);
-        preview.sprite = Sprite.Create(imageTexture, previewImageRect, new Vector2(.5f, .5f));
-
-        if (shouldShuffleRealTime)
-            StartCoroutine(RealtimeShuffle(invisiblePiece, shuffleTime));
-        else
-            Shuffle(invisiblePiece, shuffleTime);
+        StartNewPuzzle();
     }
 
     PuzzlePiece InstantiateInvisiblePiece()
     {
-        GameObject invisiblePieceGo = Instantiate<GameObject>(emptyPuzzlePrefab, Vector3.zero, Quaternion.identity);
+        GameObject invisiblePieceGo = Instantiate<GameObject>(emptyPuzzlePrefab, anchor + Vector3.zero, Quaternion.identity);
         PuzzlePiece invisiblePiece = invisiblePieceGo.GetComponent<PuzzlePiece>();
         invisiblePiece.dependency = this;
         invisiblePiece.isInvisiblePiece = true;
+        invisiblePiece.index = Vector2Int.zero;
 
         return invisiblePiece;
     }
@@ -72,12 +61,14 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
             tilePosition.x = pieceSize.x * index.x;
             tilePosition.y = pieceSize.y * index.y;
 
-            GameObject visibleTileGo = Instantiate<GameObject>(puzzlePrefab, tilePosition, Quaternion.identity);
+            GameObject visiblePieceGo = Instantiate<GameObject>(puzzlePrefab, anchor + tilePosition, Quaternion.identity);
+            PuzzlePiece visiblePiece = visiblePieceGo.GetComponent<PuzzlePiece>();
 
-            visibleTileGo.GetComponent<BoxCollider2D>().size = pieceSize;
-            visibleTileGo.GetComponent<SpriteRenderer>().sprite = CreateSpriteForPiece(imageTexture, index, spriteSize, pixelsPerUnit);
-            visibleTileGo.GetComponent<PuzzlePiece>().dependency = this;
-            visiblePieces.Add(index, visibleTileGo.GetComponent<PuzzlePiece>());
+            visiblePieceGo.GetComponent<BoxCollider2D>().size = pieceSize;
+            visiblePieceGo.GetComponent<SpriteRenderer>().sprite = CreateSpriteForPiece(imageTexture, index, spriteSize, pixelsPerUnit);
+            visiblePiece.dependency = this;
+            visiblePiece.index = index;
+            visiblePieces.Add(index, visiblePiece);
         }
 
         return visiblePieces;
@@ -107,33 +98,8 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 
         Rect roi = new Rect(tilePadding, spriteSize);
 
-        Vector2 pivot = new Vector2(.5f, .5f);
+        Vector2 pivot = new Vector2(0.5f, 0.5f);
         return Sprite.Create(texture, roi, pivot, pixelsPerUnit);
-    }
-
-    void ConnectEachPieces(Dictionary<Vector2Int, PuzzlePiece> pieceMap)
-    {
-        for (int x = 0; x < puzzleDiagonalNum; x++)
-        {
-            for (int y = 0; y < puzzleDiagonalNum; y++)
-            {
-                Vector2Int idx = new Vector2Int(x, y);
-
-                Vector2Int topIdx = new Vector2Int(x, y + 1);
-                Vector2Int bottomIdx = new Vector2Int(x, y - 1);
-                Vector2Int leftIdx = new Vector2Int(x - 1, y);
-                Vector2Int rightIdx = new Vector2Int(x + 1, y);
-
-                if (pieceMap.ContainsKey(topIdx))
-                    pieceMap[idx].top = pieceMap[topIdx];
-                if (pieceMap.ContainsKey(bottomIdx))
-                    pieceMap[idx].bottom = pieceMap[bottomIdx];
-                if (pieceMap.ContainsKey(leftIdx))
-                    pieceMap[idx].left = pieceMap[leftIdx];
-                if (pieceMap.ContainsKey(rightIdx))
-                    pieceMap[idx].right = pieceMap[rightIdx];
-            }
-        }
     }
 
     // Update is called once per frame
@@ -164,21 +130,50 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         }
     }
 
+    List<Vector2Int> GetNeighborDirections()
+    {
+        List<Vector2Int> neighborDirections = new List<Vector2Int>();
+        neighborDirections.Add(Vector2Int.up);
+        neighborDirections.Add(Vector2Int.down);
+        neighborDirections.Add(Vector2Int.left);
+        neighborDirections.Add(Vector2Int.right);
+
+        return neighborDirections;
+    }
+
+    List<Vector2Int> GetNeighborIndices(PuzzlePiece piece)
+    {
+        List<Vector2Int> neighborDirections = GetNeighborDirections();
+
+        List<Vector2Int> neighborIndices = new List<Vector2Int>();
+        foreach (var direction in neighborDirections)
+            neighborIndices.Add(piece.index + direction);
+
+        return neighborIndices;
+    }
+
+    List<PuzzlePiece> GetNeighbors(PuzzlePiece piece)
+    {
+        List<Vector2Int> neighborIndices = GetNeighborIndices(piece);
+
+        List<PuzzlePiece> neighbors = new List<PuzzlePiece>();
+        foreach(var index in neighborIndices)
+        {
+            PuzzlePiece neighbor;
+            if (currentPieceMap.TryGetValue(index, out neighbor))
+                neighbors.Add(neighbor);
+        }
+
+        return neighbors;
+    }
+
     PuzzlePiece RandomMovement(PuzzlePiece invisiblePiece, PuzzlePiece exceptPiece)
     {
-        List<PuzzlePiece> selectablePieces = new List<PuzzlePiece>();
-        if (invisiblePiece.top && invisiblePiece.top != exceptPiece)
-            selectablePieces.Add(invisiblePiece.top);
-        if (invisiblePiece.bottom && invisiblePiece.bottom != exceptPiece)
-            selectablePieces.Add(invisiblePiece.bottom);
-        if (invisiblePiece.left && invisiblePiece.left != exceptPiece)
-            selectablePieces.Add(invisiblePiece.left);
-        if (invisiblePiece.right && invisiblePiece.right != exceptPiece)
-            selectablePieces.Add(invisiblePiece.right);
+        List<PuzzlePiece> selectablePieces = GetNeighbors(invisiblePiece);
+        selectablePieces.Remove(exceptPiece);
 
         System.Random random = new System.Random();
         int randomIdx = random.Next(selectablePieces.Count);
-        Debug.Log(selectablePieces.Count);
         PuzzlePiece selectedPiece = selectablePieces[randomIdx];
 
         selectedPiece.OnMouseDown();
@@ -188,7 +183,33 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 
     void StartNewPuzzle()
     {
-        Debug.Log("Delete All puzzles. create new one. set new sprite. reorder connectivity. check destruction.");
+        if(initialPieceMap != null)
+        {
+            foreach (var piece in initialPieceMap.Values)
+            {
+                GameObject.Destroy(piece.gameObject);
+            }
+        }
+
+        PuzzlePiece invisiblePiece = InstantiateInvisiblePiece();
+        Dictionary<Vector2Int, PuzzlePiece> visiblePieces = InstantiateVisiblePieces();
+
+        initialPieceMap = new Dictionary<Vector2Int, PuzzlePiece>(visiblePieces);
+        initialPieceMap.Add(Vector2Int.zero, invisiblePiece);
+
+        currentPieceMap = new Dictionary<Vector2Int, PuzzlePiece>(initialPieceMap);
+
+        Rect previewImageRect = new Rect(0, 0, imageTexture.width, imageTexture.height);
+
+        float previewPixelsPerUnit = Mathf.Max(imageTexture.width, imageTexture.height) / previewSize;
+        preview.sprite = Sprite.Create(imageTexture, previewImageRect, new Vector2(.5f, .5f), previewPixelsPerUnit);
+
+        if (shouldShuffleRealTime)
+            StartCoroutine(RealtimeShuffle(invisiblePiece, shuffleTime));
+        else
+            Shuffle(invisiblePiece, shuffleTime);
+
+        text.text = "";
     }
 
     bool CheckCompleted()
@@ -206,8 +227,39 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
             return true;
     }
 
-    public Vector2 GetPieceSize()
+    Vector2 PuzzlePiece.Dependency.GetPieceSize()
     {
         return pieceSize;
+    }
+
+    void PuzzlePiece.Dependency.HandleInput(PuzzlePiece inputPiece)
+    {
+        List<Vector2Int> neighborDirections = GetNeighborDirections();
+        foreach (var direction in neighborDirections)
+        {
+            Vector2Int neighborIndex = inputPiece.index + direction;
+            PuzzlePiece targetPiece;
+            if (currentPieceMap.TryGetValue(neighborIndex, out targetPiece) && targetPiece.isInvisiblePiece)
+            {
+                PuzzlePiece.SwapIndex(inputPiece, targetPiece);
+                currentPieceMap[inputPiece.index] = inputPiece;
+                currentPieceMap[targetPiece.index] = targetPiece;
+                inputPiece.MoveRelative(direction);
+                targetPiece.MoveRelative(direction * -1);
+                break;
+            }
+        }
+
+        if (CheckCompleted())
+        {
+            text.text = revealText;
+        }
+    }
+
+    public void OnClickNextPuzzleButton()
+    {
+        Toggle activateToggle = toggleGroup.GetFirstActiveToggle();
+        imageTexture = (Texture2D)activateToggle.targetGraphic.mainTexture;
+        StartNewPuzzle();
     }
 }

@@ -7,6 +7,7 @@ public class PuzzlePiece : MonoBehaviour
     public interface Dependency
     {
         Vector2 GetPieceSize();
+        void HandleInput(PuzzlePiece inputPiece);
     }
     public Dependency dependency;
 
@@ -76,22 +77,23 @@ public class PuzzlePiece : MonoBehaviour
             movementTime = 0.001f;
             passedTime = 0;
         }
+
+        public void BlinkRelative(Vector3 distance, bool skipPrevious = true)
+        {
+            if (skipPrevious)
+                BlinkTo(targetPosition + distance);
+            else
+                BlinkTo(transform.position + distance);
+
+        }
     }
     private InterpolatedMovement movement;
 
-    public PuzzlePiece top;
-    public PuzzlePiece bottom;
-    public PuzzlePiece left;
-    public PuzzlePiece right;
-
-    private IEnumerator moveCoroutine;
-    private Vector3 startPosition;
-    private Vector3 targetPosition;
-
+    public Vector2Int index;
     public bool isInvisiblePiece = false;
+
     void Awake()
     {
-        targetPosition = transform.position;
         movement = new InterpolatedMovement(transform);
     }
 
@@ -109,167 +111,22 @@ public class PuzzlePiece : MonoBehaviour
     
     public void OnMouseDown()
     {
-        if (top != null && top.isInvisiblePiece)
-        {
-            AimToTop(dependency.GetPieceSize());
-        }
-        else if (bottom != null && bottom.isInvisiblePiece)
-        {
-            AimToBottom(dependency.GetPieceSize());
-        }
-        else if (left != null && left.isInvisiblePiece)
-        {
-            AimToLeft(dependency.GetPieceSize());
-        }
-        else if (right != null && right.isInvisiblePiece)
-        {
-            AimToRight(dependency.GetPieceSize());
-        }
+        dependency.HandleInput(this);
     }
 
-    void AimToTop(Vector2 tileSize)
+    public void MoveRelative(Vector2Int distance)
     {
-        Debug.Log("Up");
-
-        Vector3 distance = new Vector3(0, tileSize.y, 0);
-        movement.SetRelativeMovement(distance, 0.1f, true);
-
-        PuzzlePiece topBackup = top;
-        PuzzlePiece bottomBackup = bottom;
-        PuzzlePiece leftBackup = left;
-        PuzzlePiece rightBackup = right;
-
-        if (bottomBackup)
-            bottomBackup.top = topBackup;
-        if (leftBackup)
-            leftBackup.right = topBackup;
-        if (rightBackup)
-            rightBackup.left = topBackup;
-
-        if (topBackup.top)
-            topBackup.top.bottom = this;
-        if (topBackup.left)
-            topBackup.left.right = this;
-        if (topBackup.right)
-            topBackup.right.left = this;
-
-        top = topBackup.top;
-        bottom = topBackup;
-        left = topBackup.left;
-        right = topBackup.right;
-
-        topBackup.top = this;
-        topBackup.bottom = bottomBackup;
-        topBackup.left = leftBackup;
-        topBackup.right = rightBackup;
+        movement.SetRelativeMovement(distance * dependency.GetPieceSize(), 0.1f, true);
     }
-    void AimToBottom(Vector2 tileSize)
+    public void BlinkRelative(Vector2Int distance)
     {
-        Debug.Log("Bottom");
-
-        Vector3 distance = new Vector3(0, -tileSize.y, 0);
-        movement.SetRelativeMovement(distance, 0.1f, true);
-
-        PuzzlePiece topBackup = top;
-        PuzzlePiece bottomBackup = bottom;
-        PuzzlePiece leftBackup = left;
-        PuzzlePiece rightBackup = right;
-
-        if (topBackup)
-            topBackup.bottom = bottomBackup;
-        if (leftBackup)
-            leftBackup.right = bottomBackup;
-        if (rightBackup)
-            rightBackup.left = bottomBackup;
-
-        if (bottomBackup.bottom)
-            bottomBackup.bottom.top = this;
-        if (bottomBackup.left)
-            bottomBackup.left.right = this;
-        if (bottomBackup.right)
-            bottomBackup.right.left = this;
-
-        top = bottomBackup;
-        bottom = bottomBackup.bottom;
-        left = bottomBackup.left;
-        right = bottomBackup.right;
-
-        bottomBackup.top = topBackup;
-        bottomBackup.bottom = this;
-        bottomBackup.left = leftBackup;
-        bottomBackup.right = rightBackup;
+        movement.BlinkRelative(distance * dependency.GetPieceSize(), true);
     }
-    void AimToLeft(Vector2 tileSize)
+
+    static public void SwapIndex(PuzzlePiece op0, PuzzlePiece op1)
     {
-        Debug.Log("Left");
-
-        Vector3 distance = new Vector3(-tileSize.x, 0, 0);
-        movement.SetRelativeMovement(distance, 0.1f, true);
-
-        PuzzlePiece topBackup = top;
-        PuzzlePiece bottomBackup = bottom;
-        PuzzlePiece leftBackup = left;
-        PuzzlePiece rightBackup = right;
-
-        if (topBackup)
-            topBackup.bottom = leftBackup;
-        if (bottomBackup)
-            bottomBackup.top = leftBackup;
-        if (rightBackup)
-            rightBackup.left = leftBackup;
-
-        if (leftBackup.top)
-            leftBackup.top.bottom = this;
-        if (leftBackup.bottom)
-            leftBackup.bottom.top = this;
-        if (leftBackup.left)
-            leftBackup.left.right = this;
-
-        top = leftBackup.top;
-        bottom = leftBackup.bottom;
-        left = leftBackup.left;
-        right = leftBackup;
-
-        leftBackup.top = topBackup;
-        leftBackup.bottom = bottomBackup;
-        leftBackup.left = this;
-        leftBackup.right = rightBackup;
+        Vector2Int backup = op0.index;
+        op0.index = op1.index;
+        op1.index = backup;
     }
-    void AimToRight(Vector2 tileSize)
-    {
-        Debug.Log("Right");
-
-        Vector3 distance = new Vector3(tileSize.x, 0, 0);
-        movement.SetRelativeMovement(distance, 0.1f, true);
-
-        PuzzlePiece topBackup = top;
-        PuzzlePiece bottomBackup = bottom;
-        PuzzlePiece leftBackup = left;
-        PuzzlePiece rightBackup = right;
-
-        if (topBackup)
-            topBackup.bottom = rightBackup;
-        if (bottomBackup)
-            bottomBackup.top = rightBackup;
-        if (leftBackup)
-            leftBackup.right = rightBackup;
-
-        if (rightBackup.top)
-            rightBackup.top.bottom = this;
-        if (rightBackup.bottom)
-            rightBackup.bottom.top = this;
-        if (rightBackup.right)
-            rightBackup.right.left = this;
-
-        top = rightBackup.top;
-        bottom = rightBackup.bottom;
-        left = rightBackup;
-        right = rightBackup.right;
-
-        rightBackup.top = topBackup;
-        rightBackup.bottom = bottomBackup;
-        rightBackup.left = leftBackup;
-        rightBackup.right = this;
-    }
-
 }

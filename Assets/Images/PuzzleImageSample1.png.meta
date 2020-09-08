@@ -1,34 +1,7 @@
 fileFormatVersion: 2
-guid: 5e335d75a990d2441aca42f786b7d1f3
+guid: 555f3b9d2f295b443b425a944bde0d46
 TextureImporter:
-  internalIDToNameTable:
-  - first:
-      213: -7628780830611524942
-    second: PuzzleImageSample1_0
-  - first:
-      213: -4507280860643745487
-    second: PuzzleImageSample1_1
-  - first:
-      213: -609942707687477759
-    second: PuzzleImageSample1_2
-  - first:
-      213: -5789362610614294379
-    second: PuzzleImageSample1_3
-  - first:
-      213: 8660496237725841277
-    second: PuzzleImageSample1_4
-  - first:
-      213: 4293945691051601002
-    second: PuzzleImageSample1_5
-  - first:
-      213: -8970589321905875708
-    second: PuzzleImageSample1_6
-  - first:
-      213: -5848791634351932015
-    second: PuzzleImageSample1_7
-  - first:
-      213: 4354341036108179466
-    second: PuzzleImageSample1_8
+  internalIDToNameTable: []
   externalObjects: {}
   serializedVersion: 11
   mipmaps:
@@ -50,6 +23,7 @@ TextureImporter:
   isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
+  vTOnly: 0
   grayScaleToAlpha: 0
   generateCubemap: 6
   cubemapConvolution: 0
@@ -67,7 +41,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 2
+  spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -84,6 +58,7 @@ TextureImporter:
   maxTextureSizeSet: 0
   compressionQualitySet: 0
   textureFormatSet: 0
+  ignorePngGamma: 0
   applyGammaDecoding: 0
   platformSettings:
   - serializedVersion: 3
@@ -98,222 +73,9 @@ TextureImporter:
     overridden: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
-    buildTarget: Standalone
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
-  - serializedVersion: 3
-    buildTarget: WebGL
-    maxTextureSize: 2048
-    resizeAlgorithm: 0
-    textureFormat: -1
-    textureCompression: 1
-    compressionQuality: 50
-    crunchedCompression: 0
-    allowsAlphaSplitting: 0
-    overridden: 0
-    androidETC2FallbackOverride: 0
-    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites:
-    - serializedVersion: 2
-      name: PuzzleImageSample1_0
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 225.33334
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 2b2371ae040212690800000000000000
-      internalID: -7628780830611524942
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_1
-      rect:
-        serializedVersion: 2
-        x: 112
-        y: 225.33334
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 131a96610fbe271c0800000000000000
-      internalID: -4507280860643745487
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_2
-      rect:
-        serializedVersion: 2
-        x: 224
-        y: 225.33334
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 10ea2f6c65c0987f0800000000000000
-      internalID: -609942707687477759
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_3
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 113.333336
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 5982866016d08afa0800000000000000
-      internalID: -5789362610614294379
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_4
-      rect:
-        serializedVersion: 2
-        x: 112
-        y: 113.333336
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: d7771446173403870800000000000000
-      internalID: 8660496237725841277
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_5
-      rect:
-        serializedVersion: 2
-        x: 224
-        y: 113.333336
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a6c23ff0bd8279b30800000000000000
-      internalID: 4293945691051601002
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_6
-      rect:
-        serializedVersion: 2
-        x: 0
-        y: 1.3333359
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 40553e93a80128380800000000000000
-      internalID: -8970589321905875708
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_7
-      rect:
-        serializedVersion: 2
-        x: 112
-        y: 1.3333359
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 19d3d2d2ffae4dea0800000000000000
-      internalID: -5848791634351932015
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: PuzzleImageSample1_8
-      rect:
-        serializedVersion: 2
-        x: 224
-        y: 1.3333359
-        width: 112.666664
-        height: 112.666664
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: a0862202a1abd6c30800000000000000
-      internalID: 4354341036108179466
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
+    sprites: []
     outline: []
     physicsShape: []
     bones: []
