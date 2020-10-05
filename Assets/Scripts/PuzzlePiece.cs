@@ -13,24 +13,24 @@ public class PuzzlePiece : MonoBehaviour
 
     private class InterpolatedMovement
     {
-        private Transform transform;
+        private RectTransform transform;
         public bool shouldMove { get; private set; }
-        public Vector3 startPosition { get; private set; }
-        public Vector3 targetPosition { get; private set; }
+        public Vector2 startPosition { get; private set; }
+        public Vector2 targetPosition { get; private set; }
         public float movementTime { get; private set; }
         public float passedTime { get; private set; }
 
-        public InterpolatedMovement(Transform transform)
+        public InterpolatedMovement(RectTransform transform)
         {
             this.transform = transform;
             shouldMove = false;
-            startPosition = transform.position;
+            startPosition = transform.anchoredPosition;
             targetPosition = startPosition;
             movementTime = 0.001f;
             passedTime = 0;
         }
 
-        public void SetMovement(Vector3 targetPosition, float time, bool skipPrevious = true)
+        public void SetMovement(Vector2 targetPosition, float time, bool skipPrevious = true)
         {
             if (time < 0.001f)
                 time = 0.001f;
@@ -39,62 +39,64 @@ public class PuzzlePiece : MonoBehaviour
             passedTime = 0;
 
             if (skipPrevious)
-                transform.position = this.targetPosition;
+                transform.anchoredPosition = this.targetPosition;
 
-            startPosition = transform.position;
+            startPosition = transform.anchoredPosition;
             this.targetPosition = targetPosition;
-
+            Debug.Log(startPosition);
+            Debug.Log(targetPosition);
             shouldMove = true;
         }
-        public void SetRelativeMovement(Vector3 distance, float time, bool skipPrevious = true)
+        public void SetRelativeMovement(Vector2 distance, float time, bool skipPrevious = true)
         {
             if (skipPrevious)
                 SetMovement(targetPosition + distance, time, true);
             else
-                SetMovement(transform.position + distance, time, false);
+                SetMovement(transform.anchoredPosition + distance, time, false);
         }
         public void UpdateMovement(float deltaTime)
         {
             if (shouldMove)
             {
                 passedTime += deltaTime;
-                transform.position = Vector3.Lerp(startPosition, targetPosition, passedTime / movementTime);
+                transform.anchoredPosition = Vector3.Lerp(startPosition, targetPosition, passedTime / movementTime);
 
-                if (transform.position == targetPosition)
+                if (transform.anchoredPosition == targetPosition)
                     shouldMove = false;
             }
         }
         public void ForceToFinishMovement()
         {
             shouldMove = false;
-            transform.position = targetPosition;
+            transform.anchoredPosition = targetPosition;
         }
 
         public void BlinkTo(Vector3 targetPosition)
         {
             shouldMove = false;
-            transform.position = startPosition = this.targetPosition = targetPosition;
+            transform.anchoredPosition = startPosition = this.targetPosition = targetPosition;
             movementTime = 0.001f;
             passedTime = 0;
         }
 
-        public void BlinkRelative(Vector3 distance, bool skipPrevious = true)
+        public void BlinkRelative(Vector2 distance, bool skipPrevious = true)
         {
             if (skipPrevious)
                 BlinkTo(targetPosition + distance);
             else
-                BlinkTo(transform.position + distance);
+                BlinkTo(transform.anchoredPosition + distance);
 
         }
     }
-    private InterpolatedMovement movement;
+
+    private System.Lazy<InterpolatedMovement> movement;
 
     public Vector2Int index;
     public bool isInvisiblePiece = false;
 
     void Awake()
     {
-        movement = new InterpolatedMovement(transform);
+        movement = new System.Lazy<InterpolatedMovement>(() => new InterpolatedMovement(GetComponent<RectTransform>()));
     }
 
     // Start is called before the first frame update
@@ -106,7 +108,7 @@ public class PuzzlePiece : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        movement.UpdateMovement(Time.deltaTime);
+        movement.Value.UpdateMovement(Time.deltaTime);
     }
     
     public void OnMouseDown()
@@ -116,11 +118,11 @@ public class PuzzlePiece : MonoBehaviour
 
     public void MoveRelative(Vector2Int distance)
     {
-        movement.SetRelativeMovement(distance * dependency.GetPieceSize(), 0.1f, true);
+        movement.Value.SetRelativeMovement(distance * dependency.GetPieceSize(), 0.1f, true);
     }
     public void BlinkRelative(Vector2Int distance)
     {
-        movement.BlinkRelative(distance * dependency.GetPieceSize(), true);
+        movement.Value.BlinkRelative(distance * dependency.GetPieceSize(), true);
     }
 
     static public void SwapIndex(PuzzlePiece op0, PuzzlePiece op1)

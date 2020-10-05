@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEditor.U2D.Path;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,13 +11,9 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 {
     [Range(2, 7)]
     public int puzzleDiagonalNum = 3;
-    [Range(1f, 20f)]
-    public float puzzleSize = 10;
-    [Range(1f, 20f)]
-    public float previewSize = 4;
     public ToggleGroup toggleGroup;
     public Texture2D imageTexture;
-    public SpriteRenderer preview;
+    public Image previewGui;
     public Text text;
     public string revealText = "퍼즐을 푸셨습니다.";
     public GameObject puzzlePrefab;
@@ -23,14 +21,14 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
     public int shuffleTime = 20;
     public bool shouldShuffleRealTime;
     public bool fastRealTimeShffle;
+    public RectTransform puzzleArea;
 
     private Dictionary<Vector2Int, PuzzlePiece> initialPieceMap;
     private Dictionary<Vector2Int, PuzzlePiece> currentPieceMap;
 
     private Vector2 spriteSize { get { return new Vector2(imageTexture.width / puzzleDiagonalNum, imageTexture.height / puzzleDiagonalNum); } }
     private Vector2 SizeFittingMultiplier { get { return new Vector2(Math.Min(1, spriteSize.x / spriteSize.y), Math.Min(1, spriteSize.y / spriteSize.x)); } }
-    private Vector2 pieceSize { get { return new Vector2(puzzleSize / puzzleDiagonalNum * SizeFittingMultiplier.x, puzzleSize / puzzleDiagonalNum * SizeFittingMultiplier.y); } }
-    private Vector3 anchor { get { return transform.position - (Vector3)(pieceSize); } }
+    private Vector2 pieceSize { get { return new Vector2(puzzleArea.sizeDelta.x / puzzleDiagonalNum * SizeFittingMultiplier.x, puzzleArea.sizeDelta.y / puzzleDiagonalNum * SizeFittingMultiplier.y); } }
     // Start is called before the first frame update
     void Start()
     {
@@ -39,7 +37,9 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 
     PuzzlePiece InstantiateInvisiblePiece()
     {
-        GameObject invisiblePieceGo = Instantiate<GameObject>(emptyPuzzlePrefab, anchor + Vector3.zero, Quaternion.identity);
+        GameObject invisiblePieceGo = Instantiate<GameObject>(emptyPuzzlePrefab, puzzleArea);
+        invisiblePieceGo.GetComponent<RectTransform>().sizeDelta = pieceSize;
+        invisiblePieceGo.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
         PuzzlePiece invisiblePiece = invisiblePieceGo.GetComponent<PuzzlePiece>();
         invisiblePiece.dependency = this;
         invisiblePiece.isInvisiblePiece = true;
@@ -49,23 +49,24 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
     }
 
     Dictionary<Vector2Int, PuzzlePiece> InstantiateVisiblePieces()
-    {
-        float pixelsPerUnit = Math.Max(spriteSize.x / pieceSize.x, spriteSize.y / pieceSize.y);
-        
+    {   
         List<Vector2Int> visiblePiecesIndices = CalcVisiblePiecesIndices();
 
         Dictionary<Vector2Int, PuzzlePiece> visiblePieces = new Dictionary<Vector2Int, PuzzlePiece>();
         foreach (var index in visiblePiecesIndices)
         {
-            Vector3 tilePosition = new Vector3();
+            Vector3 tilePosition = new Vector2();
             tilePosition.x = pieceSize.x * index.x;
             tilePosition.y = pieceSize.y * index.y;
 
-            GameObject visiblePieceGo = Instantiate<GameObject>(puzzlePrefab, anchor + tilePosition, Quaternion.identity);
+            GameObject visiblePieceGo = Instantiate<GameObject>(puzzlePrefab, puzzleArea);
+            visiblePieceGo.GetComponent<RectTransform>().sizeDelta = pieceSize;
+            visiblePieceGo.GetComponent<RectTransform>().anchoredPosition = tilePosition;
             PuzzlePiece visiblePiece = visiblePieceGo.GetComponent<PuzzlePiece>();
 
-            visiblePieceGo.GetComponent<BoxCollider2D>().size = pieceSize;
-            visiblePieceGo.GetComponent<SpriteRenderer>().sprite = CreateSpriteForPiece(imageTexture, index, spriteSize, pixelsPerUnit);
+            //visiblePieceGo.GetComponent<BoxCollider2D>().size = pieceSize;
+            //visiblePieceGo.GetComponent<SpriteRenderer>().sprite = CreateSpriteForPiece(imageTexture, index, spriteSize, pixelsPerUnit);
+            visiblePieceGo.GetComponent<Image>().sprite = CreateSpriteForPiece(imageTexture, index, spriteSize);
             visiblePiece.dependency = this;
             visiblePiece.index = index;
             visiblePieces.Add(index, visiblePiece);
@@ -90,7 +91,7 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         return visiblePiecesIndices;
     }
 
-    Sprite CreateSpriteForPiece(Texture2D texture, Vector2Int pieceCoord, Vector2 spriteSize, float pixelsPerUnit)
+    Sprite CreateSpriteForPiece(Texture2D texture, Vector2Int pieceCoord, Vector2 spriteSize)
     {
         float xPadding = spriteSize.x * pieceCoord.x;
         float yPadding = spriteSize.y * pieceCoord.y;
@@ -99,7 +100,7 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         Rect roi = new Rect(tilePadding, spriteSize);
 
         Vector2 pivot = new Vector2(0.5f, 0.5f);
-        return Sprite.Create(texture, roi, pivot, pixelsPerUnit);
+        return Sprite.Create(texture, roi, pivot);
     }
 
     // Update is called once per frame
@@ -200,9 +201,7 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         currentPieceMap = new Dictionary<Vector2Int, PuzzlePiece>(initialPieceMap);
 
         Rect previewImageRect = new Rect(0, 0, imageTexture.width, imageTexture.height);
-
-        float previewPixelsPerUnit = Mathf.Max(imageTexture.width, imageTexture.height) / previewSize;
-        preview.sprite = Sprite.Create(imageTexture, previewImageRect, new Vector2(.5f, .5f), previewPixelsPerUnit);
+        previewGui.sprite = Sprite.Create(imageTexture, previewImageRect, new Vector2(.5f, .5f));
 
         if (shouldShuffleRealTime)
             StartCoroutine(RealtimeShuffle(invisiblePiece, shuffleTime));
