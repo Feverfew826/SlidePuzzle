@@ -108,12 +108,12 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
     {
     }
 
-    void Shuffle(PuzzlePiece emptyPiece, int times)
+    void Shuffle(PuzzlePiece invisiblePiece, int times)
     {
         PuzzlePiece usedPiece = null;
         for(int i = 0; i < times; i++)
         {
-            usedPiece = RandomMovement(emptyPiece, usedPiece);
+            usedPiece = RandomMovement(invisiblePiece, usedPiece);
         }
     }
 
@@ -173,8 +173,7 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         List<PuzzlePiece> selectablePieces = GetNeighbors(invisiblePiece);
         selectablePieces.Remove(exceptPiece);
 
-        System.Random random = new System.Random();
-        int randomIdx = random.Next(selectablePieces.Count);
+        int randomIdx = UnityEngine.Random.Range(0, selectablePieces.Count);
         PuzzlePiece selectedPiece = selectablePieces[randomIdx];
 
         selectedPiece.HandleClickEvent ();
@@ -230,7 +229,6 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
     {
         return pieceSize;
     }
-
     void PuzzlePiece.Dependency.HandleInput(PuzzlePiece inputPiece)
     {
         List<Vector2Int> neighborDirections = GetNeighborDirections();
