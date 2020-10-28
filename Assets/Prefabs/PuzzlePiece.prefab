@@ -136,7 +136,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 5332088324561881338}
         m_TargetAssemblyTypeName: PuzzlePiece, Assembly-CSharp
-        m_MethodName: OnMouseDown
+        m_MethodName: HandleClickEvent
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

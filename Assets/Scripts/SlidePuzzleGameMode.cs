@@ -177,7 +177,7 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         int randomIdx = random.Next(selectablePieces.Count);
         PuzzlePiece selectedPiece = selectablePieces[randomIdx];
 
-        selectedPiece.OnMouseDown();
+        selectedPiece.HandleClickEvent ();
 
         return selectedPiece;
     }

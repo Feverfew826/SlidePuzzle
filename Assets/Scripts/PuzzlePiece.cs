@@ -43,8 +43,6 @@ public class PuzzlePiece : MonoBehaviour
 
             startPosition = transform.anchoredPosition;
             this.targetPosition = targetPosition;
-            Debug.Log(startPosition);
-            Debug.Log(targetPosition);
             shouldMove = true;
         }
         public void SetRelativeMovement(Vector2 distance, float time, bool skipPrevious = true)
@@ -111,7 +109,7 @@ public class PuzzlePiece : MonoBehaviour
         movement.Value.UpdateMovement(Time.deltaTime);
     }
     
-    public void OnMouseDown()
+    public void HandleClickEvent()
     {
         dependency.HandleInput(this);
     }
