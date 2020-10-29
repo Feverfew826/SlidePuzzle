@@ -15,6 +15,7 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
     public GameObject PuzzlePieceInvisiblePrefab;
     public RectTransform puzzleGui;
     public Image previewGui;
+    public Text unrevealTextGui;
     public Text revealTextGui;
     public ToggleGroup puzzleSelectionToggleGroup;
     public GameObject puzzleSelectionTogglePrefab;
@@ -69,6 +70,8 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
             Toggle toggle = toggleGameObject.GetComponent<Toggle>();
             toggle.group = puzzleSelectionToggleGroup;
         }
+
+        puzzleSelectionToggleGroup.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 0);
 
         currentPuzzleDefinition = puzzleDefinitions[0];
 
@@ -240,15 +243,19 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         Rect previewImageRect = new Rect(0, 0, currentPuzzleDefinition.image.width, currentPuzzleDefinition.image.height);
         previewGui.sprite = Sprite.Create(currentPuzzleDefinition.image, previewImageRect, new Vector2(.5f, .5f));
 
+        revealTextGui.text = currentPuzzleDefinition.revealText;
+
         if (shouldShuffleRealTime)
             StartCoroutine(RealtimeShuffle(invisiblePiece, shuffleTime));
         else
             Shuffle(invisiblePiece, shuffleTime);
 
-        revealTextGui.text = "";
+        revealTextGui.enabled = false;
+        previewGui.enabled = true;
+        unrevealTextGui.enabled = true;
     }
 
-    bool CheckCompleted()
+    bool CheckSolved()
     {
         bool isDifferent = false;
         foreach(var key in currentPieceMap.Keys)
@@ -285,9 +292,11 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
             }
         }
 
-        if (CheckCompleted())
+        if (CheckSolved())
         {
-            revealTextGui.text = currentPuzzleDefinition.revealText;
+            previewGui.enabled = false;
+            unrevealTextGui.enabled = false;
+            revealTextGui.enabled = true;
         }
     }
 
