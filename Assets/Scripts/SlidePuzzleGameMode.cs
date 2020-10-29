@@ -1,43 +1,83 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Unity.Mathematics;
 using UnityEditor.U2D.Path;
 using UnityEditor.UIElements;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 {
+    public GameObject puzzlePiecePrefab;
+    public GameObject PuzzlePieceInvisiblePrefab;
+    public RectTransform puzzleGui;
+    public Image previewGui;
+    public Text revealTextGui;
+    public ToggleGroup puzzleSelectionToggleGroup;
+    public GameObject puzzleSelectionTogglePrefab;
+
+    public PuzzleDefinition[] puzzleDefinitions;
+    PuzzleDefinition currentPuzzleDefinition;
+
     [Range(2, 7)]
     public int puzzleDiagonalNum = 3;
-    public ToggleGroup toggleGroup;
-    public Texture2D imageTexture;
-    public Image previewGui;
-    public Text text;
-    public string revealText = "퍼즐을 푸셨습니다.";
-    public GameObject puzzlePrefab;
-    public GameObject emptyPuzzlePrefab;
     public int shuffleTime = 20;
     public bool shouldShuffleRealTime;
     public bool fastRealTimeShffle;
-    public RectTransform puzzleArea;
 
     private Dictionary<Vector2Int, PuzzlePiece> initialPieceMap;
     private Dictionary<Vector2Int, PuzzlePiece> currentPieceMap;
 
-    private Vector2 spriteSize { get { return new Vector2(imageTexture.width / puzzleDiagonalNum, imageTexture.height / puzzleDiagonalNum); } }
-    private Vector2 SizeFittingMultiplier { get { return new Vector2(Math.Min(1, spriteSize.x / spriteSize.y), Math.Min(1, spriteSize.y / spriteSize.x)); } }
-    private Vector2 pieceSize { get { return new Vector2(puzzleArea.sizeDelta.x / puzzleDiagonalNum * SizeFittingMultiplier.x, puzzleArea.sizeDelta.y / puzzleDiagonalNum * SizeFittingMultiplier.y); } }
+    private Vector2 spriteSize { get { return new Vector2(currentPuzzleDefinition.image.width / puzzleDiagonalNum, currentPuzzleDefinition.image.height / puzzleDiagonalNum); } }
+    private Vector2 sizeFittingMultiplier { get { return new Vector2(Math.Min(1, spriteSize.x / spriteSize.y), Math.Min(1, spriteSize.y / spriteSize.x)); } }
+    private Vector2 pieceSize { get { return new Vector2(puzzleGui.sizeDelta.x / puzzleDiagonalNum * sizeFittingMultiplier.x, puzzleGui.sizeDelta.y / puzzleDiagonalNum * sizeFittingMultiplier.y); } }
+
     // Start is called before the first frame update
     void Start()
     {
-        StartNewPuzzle();
+        ScrollRect scrollRect = puzzleSelectionToggleGroup.GetComponentInParent<ScrollRect>();
+        Scrollbar scrollbar = scrollRect.GetComponentInChildren<Scrollbar>();
+
+        for (int i = 0; i < puzzleDefinitions.Length; i++)
+        {
+            RectTransform toggleGroupRectTransform = puzzleSelectionToggleGroup.GetComponent<RectTransform>();
+            GameObject toggleGameObject = Instantiate<GameObject>(puzzleSelectionTogglePrefab, toggleGroupRectTransform);
+
+            RectTransform toggleRectTransform = toggleGameObject.GetComponent<RectTransform>();
+
+            RectTransform scrollRectRectTransform = scrollRect.GetComponent<RectTransform>();
+            RectTransform scrollbarRectTransform = scrollbar.GetComponent<RectTransform>();
+            float toggleGroupWidth = scrollRectRectTransform.rect.width - scrollbarRectTransform.rect.width;
+
+            toggleRectTransform.anchorMin = new Vector2(0, 1);
+            toggleRectTransform.anchorMax = new Vector2(0, 1);
+            toggleRectTransform.anchoredPosition = new Vector2(toggleGroupWidth / 2, - toggleGroupWidth * i);
+            toggleRectTransform.sizeDelta = new Vector2(toggleGroupWidth, toggleGroupWidth);
+
+            PuzzleDefinitionContainer container = toggleGameObject.GetComponent<PuzzleDefinitionContainer>();
+            container.puzzle.image = puzzleDefinitions[i].image;
+            container.puzzle.revealText = puzzleDefinitions[i].revealText;
+
+            Image toggleImage = toggleGameObject.GetComponentInChildren<Image>();
+            Vector2 imageSize = new Vector2(container.puzzle.image.width, container.puzzle.image.height);
+
+            toggleImage.sprite = Sprite.Create(container.puzzle.image, new Rect(new Vector2(0, 0), imageSize), new Vector2(0.5f, 0.5f));
+
+            Toggle toggle = toggleGameObject.GetComponent<Toggle>();
+            toggle.group = puzzleSelectionToggleGroup;
+        }
+
+        currentPuzzleDefinition = puzzleDefinitions[0];
+
+        StartNewGamePuzzle();
     }
 
     PuzzlePiece InstantiateInvisiblePiece()
     {
-        GameObject invisiblePieceGo = Instantiate<GameObject>(emptyPuzzlePrefab, puzzleArea);
+        GameObject invisiblePieceGo = Instantiate<GameObject>(PuzzlePieceInvisiblePrefab, puzzleGui);
         invisiblePieceGo.GetComponent<RectTransform>().sizeDelta = pieceSize;
         invisiblePieceGo.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
         PuzzlePiece invisiblePiece = invisiblePieceGo.GetComponent<PuzzlePiece>();
@@ -59,14 +99,12 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
             tilePosition.x = pieceSize.x * index.x;
             tilePosition.y = pieceSize.y * index.y;
 
-            GameObject visiblePieceGo = Instantiate<GameObject>(puzzlePrefab, puzzleArea);
+            GameObject visiblePieceGo = Instantiate<GameObject>(puzzlePiecePrefab, puzzleGui);
             visiblePieceGo.GetComponent<RectTransform>().sizeDelta = pieceSize;
             visiblePieceGo.GetComponent<RectTransform>().anchoredPosition = tilePosition;
             PuzzlePiece visiblePiece = visiblePieceGo.GetComponent<PuzzlePiece>();
 
-            //visiblePieceGo.GetComponent<BoxCollider2D>().size = pieceSize;
-            //visiblePieceGo.GetComponent<SpriteRenderer>().sprite = CreateSpriteForPiece(imageTexture, index, spriteSize, pixelsPerUnit);
-            visiblePieceGo.GetComponent<Image>().sprite = CreateSpriteForPiece(imageTexture, index, spriteSize);
+            visiblePieceGo.GetComponent<Image>().sprite = CreateSpriteForPiece(currentPuzzleDefinition.image, index, spriteSize);
             visiblePiece.dependency = this;
             visiblePiece.index = index;
             visiblePieces.Add(index, visiblePiece);
@@ -181,9 +219,9 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
         return selectedPiece;
     }
 
-    void StartNewPuzzle()
+    void StartNewGamePuzzle()
     {
-        if(initialPieceMap != null)
+        if (initialPieceMap != null)
         {
             foreach (var piece in initialPieceMap.Values)
             {
@@ -199,15 +237,15 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 
         currentPieceMap = new Dictionary<Vector2Int, PuzzlePiece>(initialPieceMap);
 
-        Rect previewImageRect = new Rect(0, 0, imageTexture.width, imageTexture.height);
-        previewGui.sprite = Sprite.Create(imageTexture, previewImageRect, new Vector2(.5f, .5f));
+        Rect previewImageRect = new Rect(0, 0, currentPuzzleDefinition.image.width, currentPuzzleDefinition.image.height);
+        previewGui.sprite = Sprite.Create(currentPuzzleDefinition.image, previewImageRect, new Vector2(.5f, .5f));
 
         if (shouldShuffleRealTime)
             StartCoroutine(RealtimeShuffle(invisiblePiece, shuffleTime));
         else
             Shuffle(invisiblePiece, shuffleTime);
 
-        text.text = "";
+        revealTextGui.text = "";
     }
 
     bool CheckCompleted()
@@ -249,14 +287,17 @@ public class SlidePuzzleGameMode : MonoBehaviour, PuzzlePiece.Dependency
 
         if (CheckCompleted())
         {
-            text.text = revealText;
+            revealTextGui.text = currentPuzzleDefinition.revealText;
         }
     }
 
     public void OnClickNextPuzzleButton()
     {
-        Toggle activateToggle = toggleGroup.GetFirstActiveToggle();
-        imageTexture = (Texture2D)activateToggle.targetGraphic.mainTexture;
-        StartNewPuzzle();
+        Toggle activateToggle = puzzleSelectionToggleGroup.GetFirstActiveToggle();
+        PuzzleDefinitionContainer container = activateToggle.GetComponent<PuzzleDefinitionContainer>();
+        currentPuzzleDefinition.image = container.puzzle.image;
+        currentPuzzleDefinition.revealText = container.puzzle.revealText;
+
+        StartNewGamePuzzle();
     }
 }
